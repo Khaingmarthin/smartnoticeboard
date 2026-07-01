@@ -1,5 +1,13 @@
 <?php
 include('../config/db.php');
+
+// Prevent browser from caching success/error pages
+if (isset($_GET['success']) || isset($_GET['error'])) {
+    header("Cache-Control: no-cache, no-store, must-revalidate");
+    header("Pragma: no-cache");
+    header("Expires: 0");
+}
+
 include_once('../includes/header.php');
 
 // Handle edit mode: fetch category data if edit requested
