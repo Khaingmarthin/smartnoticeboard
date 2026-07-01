@@ -42,6 +42,26 @@ if (!empty($conditions)) {
     $where = 'WHERE ' . implode(' AND ', $conditions);
 }
 
+// Pagination setup
+$per_page = 10;
+$current_page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+
+// Count total matching records
+$count_query = "SELECT COUNT(*) AS cnt FROM notices n $where";
+$count_stmt = $conn->prepare($count_query);
+if (!empty($params)) {
+    $types = '';
+    foreach ($params as $p) {
+        $types .= is_int($p) ? 'i' : 's';
+    }
+    $count_stmt->bind_param($types, ...$params);
+}
+$count_stmt->execute();
+$total_count = $count_stmt->get_result()->fetch_assoc()['cnt'];
+$total_pages = max(1, ceil($total_count / $per_page));
+$current_page = min($current_page, $total_pages);
+$offset = ($current_page - 1) * $per_page;
+
 $query = "SELECT n.*,
                  c.name AS category_name,
                  c.bg_color_code,
@@ -50,13 +70,12 @@ $query = "SELECT n.*,
           LEFT JOIN categories c ON n.category_id = c.id
           LEFT JOIN users u ON n.user_id = u.id
           $where
-          ORDER BY n.created_at DESC";
+          ORDER BY n.created_at DESC
+          LIMIT $per_page OFFSET $offset";
 
 // Use prepared statements for safety
 $stmt = $conn->prepare($query);
 if (!empty($params)) {
-    $types = str_repeat('s', count($params));
-    // Integers need 'i' type
     $types = '';
     foreach ($params as $p) {
         $types .= is_int($p) ? 'i' : 's';
@@ -72,7 +91,6 @@ if ($result && $result->num_rows > 0) {
         $notices[] = $row;
     }
 }
-$total_count = count($notices);
 
 // Fetch categories for filter dropdown
 $cat_result = mysqli_query($conn, "SELECT id, name FROM categories ORDER BY name");
@@ -104,6 +122,13 @@ function isActive($param, $value, $current) {
     if ($param === 'role') return $current === $value;
     if ($param === 'type') return $current === $value;
     return false;
+}
+
+// Build a URL preserving all current filters but changing the page
+function pageUrl($page) {
+    $params = $_GET;
+    $params['page'] = $page;
+    return '?' . http_build_query($params);
 }
 ?>
 
@@ -201,12 +226,20 @@ function isActive($param, $value, $current) {
     <!-- Results count -->
     <div class="flex items-center justify-between mb-4">
         <p class="text-sm text-slate-500">
-            Showing <span class="font-semibold text-slate-700"><?php echo $total_count; ?></span>
-            <?php echo $total_count === 1 ? 'notice' : 'notices'; ?>
+            <?php if ($total_count > 0): ?>
+                Showing <span class="font-semibold text-slate-700"><?php echo $offset + 1; ?>-<?php echo min($offset + $per_page, $total_count); ?></span>
+                of <span class="font-semibold text-slate-700"><?php echo $total_count; ?></span>
+                <?php echo $total_count === 1 ? 'notice' : 'notices'; ?>
+            <?php else: ?>
+                No results found
+            <?php endif; ?>
             <?php if ($search !== ''): ?>
                 for "<span class="font-medium text-slate-700"><?php echo htmlspecialchars($search); ?></span>"
             <?php endif; ?>
         </p>
+        <?php if ($total_pages > 1): ?>
+            <p class="text-xs text-slate-400">Page <?php echo $current_page; ?> of <?php echo $total_pages; ?></p>
+        <?php endif; ?>
     </div>
 
     <!-- Notice list -->
@@ -280,6 +313,57 @@ function isActive($param, $value, $current) {
                 </div>
             <?php endforeach; ?>
         </div>
+
+        <!-- Pagination -->
+        <?php if ($total_pages > 1): ?>
+            <div class="flex items-center justify-center gap-1.5 mt-6">
+                <!-- Previous -->
+                <?php if ($current_page > 1): ?>
+                    <a href="<?php echo pageUrl($current_page - 1); ?>"
+                        class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition text-sm">
+                        <i class="fa-solid fa-chevron-left text-xs"></i>
+                    </a>
+                <?php endif; ?>
+
+                <!-- Page numbers -->
+                <?php
+                $start = max(1, $current_page - 2);
+                $end = min($total_pages, $current_page + 2);
+
+                if ($start > 1): ?>
+                    <a href="<?php echo pageUrl(1); ?>"
+                        class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition text-sm font-medium">1</a>
+                    <?php if ($start > 2): ?>
+                        <span class="text-slate-400 text-xs px-1">...</span>
+                    <?php endif; ?>
+                <?php endif; ?>
+
+                <?php for ($i = $start; $i <= $end; $i++): ?>
+                    <?php if ($i === $current_page): ?>
+                        <span class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-blue-600 text-white text-sm font-medium"><?php echo $i; ?></span>
+                    <?php else: ?>
+                        <a href="<?php echo pageUrl($i); ?>"
+                            class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition text-sm font-medium"><?php echo $i; ?></a>
+                    <?php endif; ?>
+                <?php endfor; ?>
+
+                <?php if ($end < $total_pages): ?>
+                    <?php if ($end < $total_pages - 1): ?>
+                        <span class="text-slate-400 text-xs px-1">...</span>
+                    <?php endif; ?>
+                    <a href="<?php echo pageUrl($total_pages); ?>"
+                        class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition text-sm font-medium"><?php echo $total_pages; ?></a>
+                <?php endif; ?>
+
+                <!-- Next -->
+                <?php if ($current_page < $total_pages): ?>
+                    <a href="<?php echo pageUrl($current_page + 1); ?>"
+                        class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition text-sm">
+                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                    </a>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
     <?php else: ?>
         <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-12 text-center">
             <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
