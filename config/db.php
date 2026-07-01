@@ -42,3 +42,13 @@ function executeQuery($conn, $sql, $types = null, ...$params)
     $stmt->execute();
     return $stmt;
 }
+
+// Automatically clean up and expire past notices on any page load
+$cleanup_query = "UPDATE notices 
+                  SET status = 'expired' 
+                  WHERE status = 'published' 
+                    AND expire_date IS NOT NULL 
+                    AND expire_date <= NOW()";
+
+mysqli_query($conn, $cleanup_query);
+// Note: Use $pdo->exec($cleanup_query); 

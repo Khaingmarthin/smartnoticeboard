@@ -29,22 +29,11 @@ $stmt = $pdo->query("
 $recentNotices = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 4. Fetch Featured, Urgent Notices, and Latest Activities
-$featuredNotice = $pdo->query("
-    SELECT n.*, c.name as category_name, c.bg_color_code, u.name as author_name, a.file_path, a.file_type
-    FROM notices n
-    LEFT JOIN categories c ON n.category_id = c.id
-    LEFT JOIN users u ON n.user_id = u.id
-    LEFT JOIN attachments a ON n.id = a.notice_id
-    WHERE n.is_featured = 1 AND n.status = 'published' 
-    ORDER BY n.publish_date DESC LIMIT 1
-")->fetch(PDO::FETCH_ASSOC);
-
+$featuredNotice = $pdo->query("SELECT * FROM notices WHERE is_featured = 1  AND status = 'published' ORDER BY publish_date DESC LIMIT 2;")->fetch(PDO::FETCH_ASSOC);
 $urgentNotice = $pdo->query("
-    SELECT n.*, c.name as category_name, c.bg_color_code, u.name as author_name, a.file_path, a.file_type
+    SELECT n.*, c.name as category_name, c.bg_color_code 
     FROM notices n 
     LEFT JOIN categories c ON n.category_id = c.id 
-    LEFT JOIN users u ON n.user_id = u.id
-    LEFT JOIN attachments a ON n.id = a.notice_id
     WHERE n.is_urgent = 1 
     ORDER BY n.created_at DESC LIMIT 1
 ")->fetch(PDO::FETCH_ASSOC);
@@ -116,6 +105,7 @@ $activities = $pdo->query("SELECT action, created_at FROM history ORDER BY creat
                             </span>
 
                             <?php
+                            // 1. Identify if a valid image upload exists
                             $allowed_images = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
                             $file_ext = !empty($notice['file_type']) ? strtolower($notice['file_type']) : '';
                             $is_image = !empty($notice['file_path']) && in_array($file_ext, $allowed_images);
@@ -124,11 +114,13 @@ $activities = $pdo->query("SELECT action, created_at FROM history ORDER BY creat
                                 <img src="../uploads/<?php echo htmlspecialchars($notice['file_path']); ?>"
                                     class="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                                     alt="<?php echo htmlspecialchars($notice['title']); ?>">
+
                             <?php else: ?>
-                                <div class="text-center flex flex-col items-center justify-center opacity-75">
+                                <div class=" text-center flex flex-col items-center justify-center opacity-75">
                                     <?php
                                     $cat_lower = strtolower($notice['category_name'] ?? '');
-                                    if (strpos($cat_lower, 'exam') !== false): ?>
+                                    if (strpos($cat_lower, 'exam') !== false):
+                                        ?>
                                         <div class="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mb-1">
                                             <i class="fa-solid fa-file-signature text-xl text-red-600"></i>
                                         </div>
@@ -140,7 +132,7 @@ $activities = $pdo->query("SELECT action, created_at FROM history ORDER BY creat
                                         <div class="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center mb-1">
                                             <i class="fa-solid fa-calendar-check text-xl text-amber-600"></i>
                                         </div>
-                                    <?php else: ?>
+                                    <?php else: // General or default fallback info icon ?>
                                         <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mb-1">
                                             <i class="fa-solid fa-bullhorn text-xl text-blue-600"></i>
                                         </div>
@@ -160,7 +152,8 @@ $activities = $pdo->query("SELECT action, created_at FROM history ORDER BY creat
                                 <div class="mt-2 text-xs">
                                     <a href="../uploads/<?php echo htmlspecialchars($notice['file_path']); ?>" target="_blank"
                                         class="text-blue-600 hover:underline font-medium">
-                                        <i class="fas fa-paperclip mr-1"></i> View File (
+                                        <i class="fas fa-paperclip mr-1"></i> View File
+                                        (
                                         <?php echo htmlspecialchars($notice['file_type']); ?>)
                                     </a>
                                 </div>
@@ -175,13 +168,13 @@ $activities = $pdo->query("SELECT action, created_at FROM history ORDER BY creat
                                 </span>
                             </div>
                             <div class="flex space-x-2">
-                                <button type="button"
+                                <button
                                     onclick="openNoticeModal(<?php echo htmlspecialchars(json_encode($notice), ENT_QUOTES, 'UTF-8'); ?>)"
                                     class="flex-1 bg-blue-50 text-blue-600 py-1.5 rounded-lg text-sm hover:bg-blue-100 transition flex items-center justify-center cursor-pointer">
-                                    <i class="fas fa-eye"></i>
+                                    <i class=" fas fa-eye"></i>
                                 </button>
 
-                                <a href="editnotice.php?id=<?php echo $notice['id']; ?>&from=dashboard"
+                                <a href="editnotice.php?id=<?php echo $notice['id']; ?>"
                                     class="flex-1 bg-gray-50 text-gray-600 py-1.5 rounded-lg text-sm hover:bg-gray-100 transition flex items-center justify-center">
                                     <i class="fas fa-edit"></i>
                                 </a>
@@ -211,14 +204,18 @@ $activities = $pdo->query("SELECT action, created_at FROM history ORDER BY creat
                     <?php echo htmlspecialchars($featuredNotice['content']); ?>
                 </p>
                 <button type="button"
-                    onclick="openNoticeModal(<?php echo htmlspecialchars(json_encode($featuredNotice), ENT_QUOTES, 'UTF-8'); ?>)"
-                    class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors cursor-pointer w-full">
+                    class="open-notice-btn bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                    data-title="<?php echo htmlspecialchars($featuredNotice['title']); ?>"
+                    data-content="<?php echo htmlspecialchars($featuredNotice['content']); ?>"
+                    data-category="<?php echo htmlspecialchars($featuredNotice['category_name'] ?? 'General'); ?>"
+                    data-author="<?php echo htmlspecialchars($featuredNotice['author_name'] ?? 'Admin'); ?>"
+                    data-date="<?php echo date('d M Y', strtotime($featuredNotice['publish_date'])); ?>">
                     View Notice
                 </button>
             </div>
         <?php endif; ?>
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <!-- <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h3 class="font-bold text-gray-800 mb-4">Latest Activities</h3>
             <div class="space-y-4">
                 <?php if (empty($activities)): ?>
@@ -231,9 +228,7 @@ $activities = $pdo->query("SELECT action, created_at FROM history ORDER BY creat
                                 <i class="fas fa-history text-xs"></i>
                             </div>
                             <div>
-                                <p class="text-sm text-gray-800">
-                                    <?php echo htmlspecialchars($activity['action']); ?>
-                                </p>
+                                <p class="text-sm text-gray-800"><?php echo htmlspecialchars($activity['action']); ?></p>
                                 <p class="text-xs text-gray-500">
                                     <?php echo date('d M Y, h:i A', strtotime($activity['created_at'])); ?>
                                 </p>
@@ -242,8 +237,7 @@ $activities = $pdo->query("SELECT action, created_at FROM history ORDER BY creat
                     <?php endforeach; ?>
                 <?php endif; ?>
             </div>
-        </div>
-
+        </div> -->
     </div>
 </div>
 
@@ -266,11 +260,12 @@ $activities = $pdo->query("SELECT action, created_at FROM history ORDER BY creat
 <?php endif; ?>
 
 <?php
+// 5. Clean layout wrapper closures and Javascript Clock interval engines
 include '../includes/footer.php';
 ?>
-
 <div id="noticeModal" class="fixed inset-0 bg-black bg-opacity-40 z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl max-w-2xl w-full shadow-xl relative overflow-hidden flex flex-col max-h-[85vh]">
+    <div
+        class="bg-white rounded-xl max-w-2xl w-full shadow-xl relative overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200 max-h-[85vh]">
 
         <div class="p-6 border-b border-gray-100 flex items-start justify-between">
             <div>
@@ -278,8 +273,7 @@ include '../includes/footer.php';
                     class="text-[11px] font-bold text-white px-2.5 py-0.5 rounded shadow-sm inline-block mb-2"></span>
                 <h3 id="modalTitle" class="text-xl font-bold text-gray-900 pr-6"></h3>
             </div>
-            <button type="button" onclick="closeNoticeModal()"
-                class="text-gray-400 hover:text-gray-600 text-lg p-1 cursor-pointer">
+            <button onclick="closeNoticeModal()" class="text-gray-400 hover:text-gray-600 text-lg p-1">
                 <i class="fas fa-times"></i>
             </button>
         </div>
@@ -328,8 +322,8 @@ include '../includes/footer.php';
         </div>
 
         <div class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-2">
-            <button type="button" onclick="closeNoticeModal()"
-                class="bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 px-4 py-2 rounded-lg text-sm font-medium transition cursor-pointer">Close</button>
+            <button onclick="closeNoticeModal()"
+                class="bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 px-4 py-2 rounded-lg text-sm font-medium transition">Close</button>
             <a id="modalEditBtn" href=""
                 class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">Edit
                 Post</a>
@@ -337,28 +331,51 @@ include '../includes/footer.php';
     </div>
 </div>
 
+<div id="noticeModal"
+    class="fixed inset-0 bg-slate-900 bg-opacity-50 hidden items-center justify-center z-50 p-4 transition-opacity duration-300">
+    <div
+        class="bg-white rounded-xl shadow-xl max-w-lg w-full overflow-hidden transform scale-95 transition-transform duration-300">
+        <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+            <span id="modalCategory"
+                class="px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Category</span>
+            <button onclick="closeNoticeModal()"
+                class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
+        </div>
+        <div class="p-6">
+            <h3 id="modalTitle" class="text-xl font-bold text-slate-800 mb-2">Notice Title</h3>
+            <div class="flex items-center gap-4 text-xs text-slate-500 mb-4">
+                <span id="modalAuthor">By Admin</span>
+                <span id="modalDate">Date</span>
+            </div>
+            <p id="modalContent" class="text-slate-600 text-sm leading-relaxed whitespace-pre-line">Notice content goes
+                here...</p>
+        </div>
+        <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+            <button onclick="closeNoticeModal()"
+                class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300 transition-colors">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
 <script>
     function openNoticeModal(notice) {
-        if (!notice) return;
-
-        // 1. Assign basic details
-        document.getElementById('modalTitle').innerText = notice.title || '';
-        document.getElementById('modalContent').innerText = notice.content || '';
+        // 1. Assign plaintext string metrics
+        document.getElementById('modalTitle').innerText = notice.title;
+        document.getElementById('modalContent').innerText = notice.content;
         document.getElementById('modalAuthor').innerText = notice.author_name || 'Admin';
-        document.getElementById('modalRole').innerText = notice.target_role === 'all' ? 'All System Users' : (notice.target_role || 'All');
+        document.getElementById('modalRole').innerText = notice.target_role === 'all' ? 'All System Users' : notice.target_role;
 
-        // 2. Format Timestamp
-        const dateObj = new Date(notice.created_at || notice.publish_date);
-        document.getElementById('modalDate').innerText = !isNaN(dateObj)
-            ? dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-            : 'Recent';
+        // 2. Format localized human-readable date 
+        const dateObj = new Date(notice.created_at);
+        document.getElementById('modalDate').innerText = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
-        // 3. Category styling
+        // 3. Category Custom CSS Label mapping 
         const catBadge = document.getElementById('modalCategory');
         catBadge.innerText = notice.category_name || 'General';
         catBadge.style.backgroundColor = notice.bg_color_code || '#4F46E5';
 
-        // 4. Urgency alert status
+        // 4. Evaluate Urgency styling alerts
         const urgencyLabel = document.getElementById('modalUrgency');
         if (parseInt(notice.is_urgent) === 1) {
             urgencyLabel.innerText = '⚠️ Critical / Urgent';
@@ -368,8 +385,8 @@ include '../includes/footer.php';
             urgencyLabel.className = 'font-semibold text-gray-700';
         }
 
-        // 5. Update Quick Action Route redirects
-        document.getElementById('modalEditBtn').href = `editnotice.php?id=${notice.id}&from=dashboard`;
+        // 5. Update Quick Action Route link redirects
+        document.getElementById('modalEditBtn').href = `editnotice.php?id=${notice.id}`;
 
         // 6. Inspect Dynamic Attachment Formats (Images vs Documents)
         const imgContainer = document.getElementById('modalImageContainer');
@@ -379,7 +396,7 @@ include '../includes/footer.php';
         docContainer.classList.add('hidden');
 
         if (notice.file_path) {
-            const fileExt = notice.file_type ? notice.file_type.toLowerCase() : notice.file_path.split('.').pop().toLowerCase();
+            const fileExt = notice.file_type ? notice.file_type.toLowerCase() : '';
             const isImg = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt);
 
             if (isImg) {
@@ -392,29 +409,56 @@ include '../includes/footer.php';
             }
         }
 
-        // Display the unified structural window panel overlay
-        const modal = document.getElementById('noticeModal');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
+        // Show overlay element container window
+        document.getElementById('noticeModal').classList.remove('hidden');
     }
 
     function closeNoticeModal() {
-        const modal = document.getElementById('noticeModal');
-        if (modal) {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }
+        document.getElementById('noticeModal').classList.add('hidden');
     }
 
-    // Backdrop Click Dismiss handling
     document.addEventListener('DOMContentLoaded', function () {
         const modal = document.getElementById('noticeModal');
-        if (modal) {
-            modal.addEventListener('click', function (e) {
-                if (e.target === modal) {
-                    closeNoticeModal();
-                }
+        const modalBox = modal.querySelector('.transform');
+        const buttons = document.querySelectorAll('.open-notice-btn');
+
+        // Open Modal and Populate Data
+        buttons.forEach(button => {
+            button.addEventListener('click', function () {
+                document.getElementById('modalTitle').textContent = this.getAttribute('data-title');
+                document.getElementById('modalContent').textContent = this.getAttribute('data-content');
+                document.getElementById('modalCategory').textContent = this.getAttribute('data-category');
+                document.getElementById('modalAuthor').textContent = 'By ' + this.getAttribute('data-author');
+                document.getElementById('modalDate').textContent = this.getAttribute('data-date');
+
+                // Show classes
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                setTimeout(() => {
+                    modalBox.classList.remove('scale-95');
+                    modalBox.classList.add('scale-100');
+                }, 10);
             });
-        }
+        });
+
+        // Close Modal when clicking outside the content container box
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal) {
+                closeNoticeModal();
+            }
+        });
     });
+
+    function closeNoticeModal() {
+        const modal = document.getElementById('noticeModal');
+        const modalBox = modal.querySelector('.transform');
+
+        modalBox.classList.remove('scale-100');
+        modalBox.classList.add('scale-95');
+
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }, 150);
+    }
 </script>

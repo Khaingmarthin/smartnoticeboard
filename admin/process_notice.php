@@ -1,55 +1,102 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-require '../config/db.php';
+session_start();
+include('../config/db.php');
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $title = mysqli_real_escape_string($conn, $_POST['title']);
+    $content = mysqli_real_escape_string($conn, $_POST['content']);
+    $category_id = intval($_POST['category_id']);
 
-if (isset($_FILES['attachment']) && $_FILES['attachment']['error'] == 0) {
-    $allowed = ['jpg', 'jpeg', 'png', 'pdf'];
-    $fileExt = strtolower(pathinfo($_FILES['attachment']['name'], PATHINFO_EXTENSION));
+    // Checkboxes (Mutually exclusive via your frontend JS)
+    $is_urgent = isset($_POST['is_urgent']) ? 1 : 0;
+    $is_featured = isset($_POST['is_featured']) ? 1 : 0;
 
-    if (in_array($fileExt, $allowed)) {
-        // Use a unique name to prevent collisions
-        $newName = uniqid('notice_') . '.' . $fileExt;
-        $destination = '../uploads/' . $newName;
+    // --- ENUM, Nullable, and Date Column Logic Handling ---
 
-        if (move_uploaded_file($_FILES['attachment']['tmp_name'], $destination)) {
-            // Now save $newName into your 'attachments' table
-        }
+    // Target Role (Matches enum('student','admin','all'))
+    $target_role = !empty($_POST['target_role']) ? mysqli_real_escape_string($conn, $_POST['target_role']) : 'all';
+
+    // Target Year ID
+    $target_year_id = !empty($_POST['target_year_id']) && $_POST['target_year_id'] !== 'all' ? intval($_POST['target_year_id']) : "NULL";
+
+    // Publish Date: If missing from form, default to current timestamp
+    if (!empty($_POST['publish_date'])) {
+        $publish_raw = $_POST['publish_date'];
+        $publish_date = date('Y-m-d H:i:s', strtotime($publish_raw));
+    } else {
+        $publish_raw = null;
+        $publish_date = date('Y-m-d H:i:s');
     }
-}
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    try {
-        $pdo->beginTransaction(); // Transaction: Ensures both steps succeed or both fail
 
-        // 1. Insert Notice
-        $stmt = $pdo->prepare("INSERT INTO notices (title, content, user_id, status, publish_date, created_at, updated_at, is_urgent) 
-                               VALUES (?, ?, ?, 'published', NOW(), NOW(), NOW(), ?)");
-        $stmt->execute([
-            $_POST['title'],
-            $_POST['content'],
-            $_SESSION['user_id'],
-            isset($_POST['is_urgent']) ? 1 : 0
-        ]);
-        $notice_id = $pdo->lastInsertId();
+    // Expire Date
+    if (!empty($_POST['expire_date'])) {
+        $expire_raw = $_POST['expire_date'];
+        $expire_date_sql = "'" . date('Y-m-d H:i:s', strtotime($expire_raw)) . "'";
+    } else {
+        $expire_raw = null;
+        $expire_date_sql = "NULL";
+    }
 
-        // 2. Handle Attachment (if uploaded)
-        if (!empty($_FILES['attachment']['name'])) {
+    // --- Automated Status Calculation Engine (Option A) ---
+    $current_timestamp = time();
+
+    if ($publish_raw && strtotime($publish_raw) > $current_timestamp) {
+        // Scheduled for a future time
+        $status = 'draft';
+    } elseif ($expire_raw && strtotime($expire_raw) <= $current_timestamp) {
+        // Expiration time has already elapsed
+        $status = 'expired';
+    } else {
+        // Live right now
+        $status = 'published';
+    }
+
+    // Dynamic Session Admin Identification
+    $user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 1;
+
+    // 1. Core notice insertion execution block
+    $notice_query = "INSERT INTO notices (
+                        title, content, category_id, user_id, status, 
+                        target_role, target_year_id, publish_date, expire_date, 
+                        is_urgent, is_featured
+                      ) VALUES (
+                        '$title', '$content', $category_id, $user_id, '$status', 
+                        '$target_role', $target_year_id, '$publish_date', $expire_date_sql, 
+                        $is_urgent, $is_featured
+                      )";
+
+    if (mysqli_query($conn, $notice_query)) {
+        $notice_id = mysqli_insert_id($conn);
+
+        // 2. Separate Table Attachment File Upload Engine
+        if (isset($_FILES['attachment']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK) {
             $upload_dir = '../uploads/';
-            $new_filename = time() . '_' . basename($_FILES['attachment']['name']);
+            if (!is_dir($upload_dir)) {
+                mkdir($upload_dir, 0755, true);
+            }
 
-            if (move_uploaded_file($_FILES['attachment']['tmp_name'], $upload_dir . $new_filename)) {
-                $stmt = $pdo->prepare("INSERT INTO attachments (notice_id, file_path, original_name) VALUES (?, ?, ?)");
-                $stmt->execute([$notice_id, $new_filename, $_FILES['attachment']['name']]);
+            $original_name = basename($_FILES['attachment']['name']);
+            $file_name = time() . '_' . $original_name;
+            $target_file = $upload_dir . $file_name;
+            $file_type = strtolower(pathinfo($original_name, PATHINFO_EXTENSION));
+
+            if (move_uploaded_file($_FILES['attachment']['tmp_name'], $target_file)) {
+                $file_path_clean = mysqli_real_escape_string($conn, $file_name);
+                $file_type_clean = mysqli_real_escape_string($conn, $file_type);
+
+                $attach_query = "INSERT INTO attachments (notice_id, file_path, file_type) 
+                                 VALUES ($notice_id, '$file_path_clean', '$file_type_clean')";
+                mysqli_query($conn, $attach_query);
             }
         }
 
-        $pdo->commit();
-        header("Location: ../admin/admindashboard.php?success=1");
-    } catch (Exception $e) {
-        $pdo->rollBack();
-        die("Error: " . $e->getMessage());
+        header("Location: manage_notice.php?success=1");
+        exit();
+    } else {
+        echo "Database Insertion Failed: " . mysqli_error($conn);
     }
+} else {
+    header("Location: manage_notice.php");
+    exit();
 }
 ?>

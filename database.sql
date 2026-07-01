@@ -83,7 +83,7 @@ FOREIGN KEY(user_id) REFERENCES users(id)
 INSERT INTO `users` (`name`, `email`, `password_hash`, `role`) 
 VALUES (
   'Daw Khin Moe Aye', 
-  'admin1@gmail.com', 
+  'admin1@ucsmtla.edu.mm', 
   '$2y$10$7R6vYn7Cg2bFmZzD9KxOeO6h3g9DyxK2A3e8R1bC5dE6fG7h8i9jK', 
   'admin'
 );
@@ -91,7 +91,7 @@ VALUES (
 INSERT INTO `users` (`name`, `email`, `password_hash`, `role`) 
 VALUES (
   'Daw Su Sandar', 
-  'admin2@gmail.com', 
+  'admin2@ucsmtla.edu.mm', 
   'admin234', 
   'admin'
 );
@@ -100,6 +100,19 @@ INSERT INTO `notices` (`title`, `content`, `category_id`, `user_id`, `status`, `
 VALUES (
   'Cron Scheduler', 
   'Testing automation', 
+  1, 
+  2,
+  'draft',
+  'all',  
+  NULL, -- Removed the quotes
+  DATE_ADD(NOW(), INTERVAL 2 MINUTE), -- Automatically calculates 2 minutes from right now!
+  NULL  -- Left as NULL since it doesn't expire
+);
+
+INSERT INTO `notices` (`title`, `content`, `category_id`, `user_id`, `status`, `target_role`, `target_year_id`, `publish_date`, `expire_date`) 
+VALUES (
+  'Mid-term Examination', 
+  'Mid-term examination will start on July10', 
   1, 
   2,
   'draft',
