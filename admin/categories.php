@@ -1,13 +1,5 @@
 <?php
 include('../config/db.php');
-
-// Prevent browser from caching success/error pages
-if (isset($_GET['success']) || isset($_GET['error'])) {
-    header("Cache-Control: no-cache, no-store, must-revalidate");
-    header("Pragma: no-cache");
-    header("Expires: 0");
-}
-
 include_once('../includes/header.php');
 
 // Handle edit mode: fetch category data if edit requested
@@ -105,42 +97,14 @@ $category_styles = [
             </h2>
 
             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 mt-4">
-                <?php if (isset($_GET['success']) && $_GET['success'] === '1'): ?>
-                    <div class="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-sm font-medium flex items-center gap-2 animate-fade-in">
-                        <i class="fa-solid fa-circle-check text-emerald-500"></i> Adding category is success!
-                    </div>
-                <?php endif; ?>
-
-                <?php if (isset($_GET['success']) && $_GET['success'] === 'updated'): ?>
-                    <div class="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-sm font-medium flex items-center gap-2 animate-fade-in">
-                        <i class="fa-solid fa-circle-check text-emerald-500"></i> Category updated successfully!
-                    </div>
-                <?php endif; ?>
-
-                <?php if (isset($_GET['success']) && $_GET['success'] === 'deleted'): ?>
-                    <div class="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-sm font-medium flex items-center gap-2 animate-fade-in">
-                        <i class="fa-solid fa-circle-check text-emerald-500"></i> Category deleted successfully!
-                    </div>
-                <?php endif; ?>
-
-                <?php if (isset($_GET['error']) && $_GET['error'] === 'empty_fields'): ?>
-                    <div class="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-sm font-medium flex items-center gap-2">
-                        <i class="fa-solid fa-triangle-exclamation text-rose-500"></i>
-                        Error: Please fill in all required fields.
-                    </div>
-                <?php endif; ?>
-
-                <?php if (isset($_GET['error']) && $_GET['error'] === 'duplicate'): ?>
-                    <div class="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-sm font-medium flex items-center gap-2">
-                        <i class="fa-solid fa-triangle-exclamation text-rose-500"></i>
-                        Error: A category with that name already exists.
-                    </div>
-                <?php endif; ?>
-
-                <?php if (isset($_GET['error']) && $_GET['error'] === 'has_notices'): ?>
-                    <div class="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-sm font-medium flex items-center gap-2">
-                        <i class="fa-solid fa-triangle-exclamation text-rose-500"></i>
-                        Cannot delete: category still has notices assigned to it.
+                <?php if (isset($_SESSION['flash_msg'])):
+                    $is_error = ($_SESSION['flash_type'] === 'error');
+                    $flash_msg = $_SESSION['flash_msg'];
+                    unset($_SESSION['flash_msg'], $_SESSION['flash_type']);
+                ?>
+                    <div class="mb-4 p-3 rounded-lg text-sm font-medium flex items-center gap-2 <?php echo $is_error ? 'bg-rose-50 border border-rose-200 text-rose-700' : 'bg-emerald-50 border border-emerald-200 text-emerald-700'; ?>">
+                        <i class="fa-solid <?php echo $is_error ? 'fa-triangle-exclamation text-rose-500' : 'fa-circle-check text-emerald-500'; ?>"></i>
+                        <?php echo htmlspecialchars($flash_msg); ?>
                     </div>
                 <?php endif; ?>
 

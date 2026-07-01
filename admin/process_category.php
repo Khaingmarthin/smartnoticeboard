@@ -1,5 +1,5 @@
 <?php
-// 1. Include database configuration connection
+session_start();
 include('../config/db.php');
 
 $action = isset($_GET['action']) ? $_GET['action'] : (isset($_POST['action']) ? $_POST['action'] : '');
@@ -14,13 +14,17 @@ if ($action === 'delete' && isset($_GET['id'])) {
     $check = mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM notices WHERE category_id = $id");
     $row = mysqli_fetch_assoc($check);
     if ($row['cnt'] > 0) {
-        header("Location: categories.php?error=has_notices");
+        $_SESSION['flash_msg'] = 'Cannot delete: category still has notices assigned to it.';
+        $_SESSION['flash_type'] = 'error';
+        header("Location: categories.php");
         exit();
     }
 
     $delete_query = "DELETE FROM categories WHERE id = $id";
     if (mysqli_query($conn, $delete_query)) {
-        header("Location: categories.php?success=deleted");
+        $_SESSION['flash_msg'] = 'Category deleted successfully!';
+        $_SESSION['flash_type'] = 'success';
+        header("Location: categories.php");
         exit();
     } else {
         die("Database Delete Failure: " . mysqli_error($conn));
@@ -36,7 +40,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $bg_color_code = mysqli_real_escape_string($conn, trim($_POST['bg_color_code']));
 
     if (empty($category_name) || empty($bg_color_code)) {
-        header("Location: categories.php?error=empty_fields");
+        $_SESSION['flash_msg'] = 'Please fill in all required fields.';
+        $_SESSION['flash_type'] = 'error';
+        header("Location: categories.php");
         exit();
     }
 
@@ -50,13 +56,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $check_query = "SELECT id FROM categories WHERE LOWER(name) = LOWER('$category_name') AND id != $category_id";
         $check_result = mysqli_query($conn, $check_query);
         if (mysqli_num_rows($check_result) > 0) {
-            header("Location: categories.php?error=duplicate");
+            $_SESSION['flash_msg'] = 'A category with that name already exists.';
+            $_SESSION['flash_type'] = 'error';
+            header("Location: categories.php");
             exit();
         }
 
         $update_query = "UPDATE categories SET name = '$category_name', bg_color_code = '$bg_color_code' WHERE id = $category_id";
         if (mysqli_query($conn, $update_query)) {
-            header("Location: categories.php?success=updated");
+            $_SESSION['flash_msg'] = 'Category updated successfully!';
+            $_SESSION['flash_type'] = 'success';
+            header("Location: categories.php");
             exit();
         } else {
             die("Database Update Failure: " . mysqli_error($conn));
@@ -71,7 +81,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $check_query = "SELECT id FROM categories WHERE LOWER(name) = LOWER('$category_name')";
     $check_result = mysqli_query($conn, $check_query);
     if (mysqli_num_rows($check_result) > 0) {
-        header("Location: categories.php?error=duplicate");
+        $_SESSION['flash_msg'] = 'A category with that name already exists.';
+        $_SESSION['flash_type'] = 'error';
+        header("Location: categories.php");
         exit();
     }
 
@@ -79,7 +91,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                      VALUES ('$category_name', '$bg_color_code')";
 
     if (mysqli_query($conn, $insert_query)) {
-        header("Location: categories.php?success=1");
+        $_SESSION['flash_msg'] = 'Adding category is success!';
+        $_SESSION['flash_type'] = 'success';
+        header("Location: categories.php");
         exit();
     } else {
         die("Database Insertion Failure: " . mysqli_error($conn));
