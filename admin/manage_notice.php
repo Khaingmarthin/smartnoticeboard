@@ -277,63 +277,55 @@ function pageUrl($page) {
                 $is_urgent = !empty($notice['is_urgent']);
                 $is_featured = !empty($notice['is_featured']);
             ?>
-                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition">
-                    <div class="flex">
-                        <div class="w-1.5 flex-shrink-0" style="background-color: <?php echo $cat_color; ?>"></div>
-                        <div class="flex-1 p-5">
-                            <div class="flex items-start justify-between gap-4">
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center gap-2 mb-1.5 flex-wrap">
-                                        <h3 class="font-bold text-slate-900 text-base truncate">
-                                            <?php echo htmlspecialchars($notice['title']); ?>
-                                        </h3>
-                                        <?php echo statusBadge($notice['status']); ?>
-                                        <?php if ($is_urgent): ?>
-                                            <span class="text-[10px] font-bold text-white bg-red-500 px-1.5 py-0.5 rounded">URGENT</span>
-                                        <?php endif; ?>
-                                        <?php if ($is_featured): ?>
-                                            <span class="text-[10px] font-bold text-white bg-indigo-500 px-1.5 py-0.5 rounded">FEATURED</span>
-                                        <?php endif; ?>
-                                    </div>
-                                    <p class="text-sm text-slate-500 line-clamp-1 mb-3">
-                                        <?php echo htmlspecialchars(substr($notice['content'], 0, 150)); ?><?php echo strlen($notice['content']) > 150 ? '...' : ''; ?>
-                                    </p>
-                                    <div class="flex items-center text-xs text-slate-400 gap-4 flex-wrap">
-                                        <span class="inline-flex items-center gap-1">
-                                            <span class="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white" style="background-color: <?php echo $cat_color; ?>">
-                                                <i class="fa-solid fa-tag text-[7px]"></i>
-                                            </span>
-                                            <?php echo htmlspecialchars($notice['category_name'] ?? 'General'); ?>
-                                        </span>
-                                        <span><i class="far fa-user mr-1"></i><?php echo htmlspecialchars($notice['author_name'] ?? 'Admin'); ?></span>
-                                        <span><i class="far fa-calendar mr-1"></i><?php echo date('d M Y', strtotime($notice['created_at'])); ?></span>
-                                        <?php if (!empty($notice['publish_date'])): ?>
-                                            <span><i class="far fa-clock mr-1"></i><?php echo date('d M Y, h:i A', strtotime($notice['publish_date'])); ?></span>
-                                        <?php endif; ?>
-                                        <?php if (!empty($notice['target_role']) && $notice['target_role'] !== 'all'): ?>
-                                            <span class="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-[10px] font-medium uppercase"><?php echo $notice['target_role']; ?></span>
-                                        <?php endif; ?>
-                                        <?php if ($has_attachment): ?>
-                                            <span class="inline-flex items-center gap-1 text-blue-500">
-                                                <i class="fa-solid fa-paperclip"></i><?php echo strtoupper(htmlspecialchars($notice['file_type'])); ?>
-                                            </span>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-1.5 flex-shrink-0">
-                                    <a href="editnotice.php?id=<?php echo $notice['id']; ?>&from=manage"
-                                        class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition"
-                                        title="Edit Notice">
-                                        <i class="fa-solid fa-pen-to-square text-sm"></i>
-                                    </a>
-                                    <a href="deletenotice.php?id=<?php echo $notice['id']; ?>"
-                                        onclick="return confirm('Are you sure you want to delete this notice?');"
-                                        class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition"
-                                        title="Delete Notice">
-                                        <i class="fa-solid fa-trash text-sm"></i>
-                                    </a>
-                                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition p-5">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+                                <h3 class="font-bold text-slate-900 text-base truncate">
+                                    <?php echo htmlspecialchars($notice['title']); ?>
+                                </h3>
+                                <?php echo statusBadge($notice['status']); ?>
+                                <?php if ($is_urgent): ?>
+                                    <span class="text-[10px] font-bold text-white bg-red-500 px-1.5 py-0.5 rounded">URGENT</span>
+                                <?php endif; ?>
+                                <?php if ($is_featured): ?>
+                                    <span class="text-[10px] font-bold text-white bg-indigo-500 px-1.5 py-0.5 rounded">FEATURED</span>
+                                <?php endif; ?>
                             </div>
+                            <p class="text-sm text-slate-500 line-clamp-1 mb-3">
+                                <?php echo htmlspecialchars(substr($notice['content'], 0, 150)); ?><?php echo strlen($notice['content']) > 150 ? '...' : ''; ?>
+                            </p>
+                            <div class="flex items-center text-xs text-slate-400 gap-4 flex-wrap">
+                                <span class="inline-flex items-center gap-1">
+                                    <span class="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white" style="background-color: <?php echo $cat_color; ?>">
+                                        <i class="fa-solid fa-tag text-[7px]"></i>
+                                    </span>
+                                    <?php echo htmlspecialchars($notice['category_name'] ?? 'General'); ?>
+                                </span>
+                                <span><i class="far fa-user mr-1"></i><?php echo htmlspecialchars($notice['author_name'] ?? 'Admin'); ?></span>
+                                <span><i class="far fa-calendar mr-1"></i><?php echo date('d M Y', strtotime($notice['created_at'])); ?></span>
+                                <?php if (!empty($notice['publish_date'])): ?>
+                                    <span><i class="far fa-clock mr-1"></i><?php echo date('d M Y, h:i A', strtotime($notice['publish_date'])); ?></span>
+                                <?php endif; ?>
+                                <?php if ($has_attachment): ?>
+                                    <span class="inline-flex items-center gap-1 text-blue-500">
+                                        <i class="fa-solid fa-paperclip"></i><?php echo strtoupper(htmlspecialchars($notice['file_type'])); ?>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5 flex-shrink-0">
+                            <a href="editnotice.php?id=<?php echo $notice['id']; ?>&from=manage"
+                                class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition"
+                                title="Edit Notice">
+                                <i class="fa-solid fa-pen-to-square text-sm"></i>
+                            </a>
+                            <a href="deletenotice.php?id=<?php echo $notice['id']; ?>"
+                                onclick="return confirm('Are you sure you want to delete this notice?');"
+                                class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition"
+                                title="Delete Notice">
+                                <i class="fa-solid fa-trash text-sm"></i>
+                            </a>
                         </div>
                     </div>
                 </div>
