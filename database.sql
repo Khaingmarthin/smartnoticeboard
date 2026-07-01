@@ -36,6 +36,8 @@ target_role ENUM('student','admin','all') DEFAULT 'all',
 target_year_id INT NULL,
 publish_date DATETIME NULL,
 expire_date DATETIME NULL,
+is_urgent TINYINT(1) DEFAULT 0,
+is_featured TINYINT(1) DEFAULT 0,
 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
 FOREIGN KEY(category_id) REFERENCES categories(id),

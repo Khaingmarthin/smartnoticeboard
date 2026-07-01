@@ -82,7 +82,7 @@ function is_active($page_name, $current_page)
                     <i class="fas fa-list w-5"></i><span>Categories</span>
                 </a>
                 <a href="../admin/scheduled_notice.php"
-                    class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors <?php echo is_active('scheduled_notices.php', $current_page); ?>">
+                    class="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors <?php echo is_active('scheduled_notice.php', $current_page); ?>">
                     <i class="fas fa-calendar-alt w-5"></i><span>Scheduled Notices</span>
                 </a>
                 <a href="../admin/users.php"

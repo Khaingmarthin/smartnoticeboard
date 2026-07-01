@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     } else {
         // ERROR 2: Email exists, now verify password hash matches
-        if (password_verify($password, $user['password'])) {
+        if (password_verify($password, $user['password_hash'])) {
 
             // SUCCESS: Setup persistent secure session variables
             $_SESSION['user_id'] = $user['id'];
@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($user['role'] === 'admin') {
                 header("Location: ../admin/admindashboard.php");
             } else {
-                header("Location: ../student/dashboard.php"); // Or your student page
+                header("Location: ../student/studentdashboard.php"); // Or your student page
             }
             exit();
         } else {

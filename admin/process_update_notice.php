@@ -1,5 +1,12 @@
 <?php
-include('../includes/header.php');
+session_start();
+
+// Auth guard
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+    header("Location: ../aunth/login.php");
+    exit();
+}
+
 include('../config/db.php');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -99,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // 7. Redirect successfully back to the list
-        echo "<script>window.location.href='manage_notice.php?updated=1';</script>";
+        header("Location: manage_notice.php?updated=1");
         exit();
     } else {
         echo "Failed to update notice: " . mysqli_error($conn);

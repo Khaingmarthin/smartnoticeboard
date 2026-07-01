@@ -1,5 +1,12 @@
 <?php
 session_start();
+
+// Auth guard: only logged-in admins can modify categories
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+    header("Location: ../aunth/login.php");
+    exit();
+}
+
 include('../config/db.php');
 
 $action = isset($_GET['action']) ? $_GET['action'] : (isset($_POST['action']) ? $_POST['action'] : '');

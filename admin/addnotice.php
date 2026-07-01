@@ -32,26 +32,29 @@ include '../includes/header.php';
         <div class="flex space-x-6 py-2">
             <label class="flex items-center space-x-2 cursor-pointer">
                 <input type="checkbox" name="is_urgent" id="is_urgent" value="1"
-                    onclick="handleCheckboxToggle('urgent')"
+                    onchange="handleCheckboxToggle('urgent')"
                     class="w-4 h-4 rounded text-red-600 focus:ring-red-500 border-slate-300">
                 <span class="text-sm font-medium text-slate-700">Urgent</span>
             </label>
 
             <label class="flex items-center space-x-2 cursor-pointer">
                 <input type="checkbox" name="is_featured" id="is_featured" value="1"
-                    onclick="handleCheckboxToggle('featured')"
+                    onchange="handleCheckboxToggle('featured')"
                     class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300">
-                <span class="text-sm font-medium text-slate-700">Featured</span>
+                <span class="text-sm font-medium text-slate-700">Featured (Scheduled)</span>
             </label>
         </div>
 
         <div id="featured_options"
             class="hidden p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2 transition-all">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500">Featured Timing</h4>
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500">
+                <i class="fa-solid fa-clock mr-1"></i> Scheduled Publish Time
+            </h4>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Publish Date & Time</label>
-                <input type="datetime-local" name="publish_date"
+                <input type="datetime-local" name="publish_date" id="publish_date"
                     class="w-full border border-gray-300 rounded-lg p-2 bg-white text-sm">
+                <p class="text-xs text-slate-400 mt-1">Notice will be published automatically at this time.</p>
             </div>
         </div>
 
@@ -89,7 +92,7 @@ include '../includes/header.php';
                         <option value="2">Second Year</option>
                         <option value="3">Third Year</option>
                         <option value="4">Fourth Year</option>
-                        <option value="4">Fifth Year</option>
+                        <option value="5">Fifth Year</option>
                     </select>
                 </div>
             </div>
@@ -115,59 +118,42 @@ include '../includes/header.php';
 </div>
 
 <script>
-    document.getElementById('featured_checkbox').addEventListener('change', function () {
-        const optionsBlock = document.getElementById('featured_options');
-        if (this.checked) {
-            optionsBlock.classList.remove('hidden');
-        } else {
-            optionsBlock.classList.add('hidden');
-        }
-    });
-</script>
+document.addEventListener("DOMContentLoaded", function () {
+    const publishInput = document.getElementById('publish_date');
+    const expireInput = document.getElementById('expire_date');
 
-<script>
-    function toggleCheckboxes(clickedType) {
-        const urgentBox = document.getElementById('is_urgent');
-        const featuredBox = document.getElementById('is_featured');
-
-        if (clickedType === 'urgent' && urgentBox.checked) {
-            featuredBox.checked = false;
-        } else if (clickedType === 'featured' && featuredBox.checked) {
-            urgentBox.checked = false;
-        }
+    // Set min datetime to now for both date fields
+    function setMinDateTime(input) {
+        if (!input) return;
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        const h = String(now.getHours()).padStart(2, '0');
+        const min = String(now.getMinutes()).padStart(2, '0');
+        input.min = `${y}-${m}-${d}T${h}:${min}`;
     }
-</script>
 
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        // Enforce minimum expiration date to present time
-        const expireInput = document.getElementById('expire_date');
-        if (expireInput) {
-            const now = new Date();
+    setMinDateTime(publishInput);
+    setMinDateTime(expireInput);
+});
 
-            // Format current local time to match YYYY-MM-DDTHH:MM format required by HTML5 min attribute
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
+// Mutually exclusive checkboxes + show/hide publish date
+function handleCheckboxToggle(clickedType) {
+    const urgentBox = document.getElementById('is_urgent');
+    const featuredBox = document.getElementById('is_featured');
+    const featuredOptions = document.getElementById('featured_options');
 
-            const minDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
-            expireInput.min = minDateTime;
-        }
-    });
-
-    // Mutually exclusive checkbox logic
-    function handleCheckboxToggle(clickedType) {
-        const urgentBox = document.getElementById('is_urgent');
-        const featuredBox = document.getElementById('is_featured');
-
-        if (clickedType === 'urgent' && urgentBox.checked) {
-            featuredBox.checked = false;
-        } else if (clickedType === 'featured' && featuredBox.checked) {
-            urgentBox.checked = false;
-        }
+    if (clickedType === 'urgent' && urgentBox.checked) {
+        featuredBox.checked = false;
+        featuredOptions.classList.add('hidden');
+    } else if (clickedType === 'featured' && featuredBox.checked) {
+        urgentBox.checked = false;
+        featuredOptions.classList.remove('hidden');
+    } else if (clickedType === 'featured' && !featuredBox.checked) {
+        featuredOptions.classList.add('hidden');
     }
+}
 </script>
 </body>
 

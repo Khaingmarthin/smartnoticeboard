@@ -1,5 +1,12 @@
 <?php
 session_start();
+
+// Auth guard: only logged-in admins can delete notices
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+    header("Location: ../aunth/login.php");
+    exit();
+}
+
 include('../config/db.php');
 
 // 1. Check if an ID was passed in the URL

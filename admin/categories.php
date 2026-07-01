@@ -22,12 +22,15 @@ $cat_query = "SELECT c.*, COUNT(n.id) AS notice_count
               GROUP BY c.id";
 $cat_result = mysqli_query($conn, $cat_query);
 
-// Map your 4 primary categories to their specific dashboard brand colors & icons
+// Category styles with alias matching (handles singular/plural variants)
 $category_styles = [
-    'general' => ['icon' => 'fa-bullhorn', 'color' => '#4F46E5', 'bg' => 'bg-indigo-600', 'desc' => 'Standard institutional alerts'],
-    'exam' => ['icon' => 'fa-file-signature', 'color' => '#DC2626', 'bg' => 'bg-red-600', 'desc' => 'Schedules, seating, and updates'],
-    'timetables' => ['icon' => 'fa-calendar-week', 'color' => '#9333EA', 'bg' => 'bg-purple-600', 'desc' => 'Class & routine schedules'],
-    'event' => ['icon' => 'fa-calendar-check', 'color' => '#D97706', 'bg' => 'bg-amber-500', 'desc' => 'Seminars, holidays, and activities']
+    'general'   => ['icon' => 'fa-bullhorn',      'color' => '#4F46E5', 'bg' => 'bg-indigo-600', 'desc' => 'Standard institutional alerts'],
+    'exam'      => ['icon' => 'fa-file-signature', 'color' => '#DC2626', 'bg' => 'bg-red-600',    'desc' => 'Schedules, seating, and updates'],
+    'timetables'=> ['icon' => 'fa-calendar-week',  'color' => '#9333EA', 'bg' => 'bg-purple-600', 'desc' => 'Class & routine schedules'],
+    'timetable' => ['icon' => 'fa-calendar-week',  'color' => '#9333EA', 'bg' => 'bg-purple-600', 'desc' => 'Class & routine schedules'],
+    'schedule'  => ['icon' => 'fa-calendar-week',  'color' => '#9333EA', 'bg' => 'bg-purple-600', 'desc' => 'Class & routine schedules'],
+    'event'     => ['icon' => 'fa-calendar-check', 'color' => '#D97706', 'bg' => 'bg-amber-500',  'desc' => 'Seminars, holidays, and activities'],
+    'events'    => ['icon' => 'fa-calendar-check', 'color' => '#D97706', 'bg' => 'bg-amber-500',  'desc' => 'Seminars, holidays, and activities'],
 ];
 ?>
 <div class="p-6 max-w-7xl mx-auto">

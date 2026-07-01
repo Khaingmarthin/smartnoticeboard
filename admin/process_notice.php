@@ -1,5 +1,12 @@
 <?php
 session_start();
+
+// Auth guard
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+    header("Location: ../aunth/login.php");
+    exit();
+}
+
 include('../config/db.php');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
