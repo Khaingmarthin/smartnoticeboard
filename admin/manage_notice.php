@@ -3,11 +3,13 @@ include ('../includes/header.php');
 include('../config/db.php');
 
 // Read filter parameters
-$search   = isset($_GET['q']) ? trim($_GET['q']) : '';
-$status   = isset($_GET['status']) ? $_GET['status'] : '';
-$category = isset($_GET['category']) ? intval($_GET['category']) : 0;
-$role     = isset($_GET['role']) ? $_GET['role'] : '';
-$type     = isset($_GET['type']) ? $_GET['type'] : '';
+$search    = isset($_GET['q']) ? trim($_GET['q']) : '';
+$status    = isset($_GET['status']) ? $_GET['status'] : '';
+$category  = isset($_GET['category']) ? intval($_GET['category']) : 0;
+$role      = isset($_GET['role']) ? $_GET['role'] : '';
+$type      = isset($_GET['type']) ? $_GET['type'] : '';
+$date_from = isset($_GET['date_from']) ? $_GET['date_from'] : '';
+$date_to   = isset($_GET['date_to']) ? $_GET['date_to'] : '';
 
 // Build query dynamically
 $conditions = [];
@@ -35,6 +37,14 @@ if ($type === 'urgent') {
     $conditions[] = "n.is_urgent = 1";
 } elseif ($type === 'featured') {
     $conditions[] = "n.is_featured = 1";
+}
+if ($date_from !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $date_from)) {
+    $conditions[] = "DATE(n.created_at) >= ?";
+    $params[] = $date_from;
+}
+if ($date_to !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $date_to)) {
+    $conditions[] = "DATE(n.created_at) <= ?";
+    $params[] = $date_to;
 }
 
 $where = '';
@@ -160,7 +170,7 @@ function pageUrl($page) {
                     class="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition cursor-pointer">
                     <i class="fa-solid fa-search mr-1"></i> Search
                 </button>
-                <?php if ($search !== '' || $status !== '' || $category > 0 || $role !== '' || $type !== ''): ?>
+                <?php if ($search !== '' || $status !== '' || $category > 0 || $role !== '' || $type !== '' || $date_from !== '' || $date_to !== ''): ?>
                     <a href="manage_notice.php"
                         class="px-4 py-2.5 border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition">
                         <i class="fa-solid fa-xmark mr-1"></i> Clear
@@ -219,6 +229,22 @@ function pageUrl($page) {
                     <option value="urgent" <?php echo $type === 'urgent' ? 'selected' : ''; ?>>Urgent Only</option>
                     <option value="featured" <?php echo $type === 'featured' ? 'selected' : ''; ?>>Featured Only</option>
                 </select>
+
+                <div class="w-px h-6 bg-slate-200"></div>
+
+                <!-- Date range filters -->
+                <div class="flex items-center gap-1.5">
+                    <i class="far fa-calendar text-slate-400 text-xs"></i>
+                    <input type="date" name="date_from" value="<?php echo htmlspecialchars($date_from); ?>"
+                        onchange="this.form.submit()"
+                        class="border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-600 bg-white outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                        title="From date">
+                    <span class="text-slate-400 text-xs">to</span>
+                    <input type="date" name="date_to" value="<?php echo htmlspecialchars($date_to); ?>"
+                        onchange="this.form.submit()"
+                        class="border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-600 bg-white outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                        title="To date">
+                </div>
             </div>
         </div>
     </form>
@@ -370,12 +396,12 @@ function pageUrl($page) {
                 <i class="fa-solid fa-search text-2xl text-slate-300"></i>
             </div>
             <h3 class="text-lg font-bold text-slate-700 mb-1">
-                <?php echo ($search !== '' || $status !== '' || $category > 0 || $role !== '' || $type !== '') ? 'No Matching Notices' : 'No Notices Yet'; ?>
+                <?php echo ($search !== '' || $status !== '' || $category > 0 || $role !== '' || $type !== '' || $date_from !== '' || $date_to !== '') ? 'No Matching Notices' : 'No Notices Yet'; ?>
             </h3>
             <p class="text-sm text-slate-400 mb-4">
-                <?php echo ($search !== '' || $status !== '' || $category > 0 || $role !== '' || $type !== '') ? 'Try adjusting your search or filters.' : 'Create your first notice to get started.'; ?>
+                <?php echo ($search !== '' || $status !== '' || $category > 0 || $role !== '' || $type !== '' || $date_from !== '' || $date_to !== '') ? 'Try adjusting your search or filters.' : 'Create your first notice to get started.'; ?>
             </p>
-            <?php if ($search !== '' || $status !== '' || $category > 0 || $role !== '' || $type !== ''): ?>
+            <?php if ($search !== '' || $status !== '' || $category > 0 || $role !== '' || $type !== '' || $date_from !== '' || $date_to !== ''): ?>
                 <a href="manage_notice.php"
                     class="inline-flex items-center gap-2 bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-200 transition">
                     <i class="fa-solid fa-xmark"></i> Clear Filters
