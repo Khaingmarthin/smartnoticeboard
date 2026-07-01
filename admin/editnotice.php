@@ -131,25 +131,26 @@ include('../includes/header.php');
             <div class="flex space-x-6 py-2">
                 <label class="flex items-center space-x-2 cursor-pointer">
                     <input type="checkbox" name="is_urgent" id="is_urgent" value="1"
-                        onclick="handleCheckboxToggle('urgent')" <?php echo (isset($notice['is_urgent']) && (int) $notice['is_urgent'] === 1) ? 'checked' : ''; ?>
+                        onchange="handleCheckboxToggle('urgent')" <?php echo (isset($notice['is_urgent']) && (int) $notice['is_urgent'] === 1) ? 'checked' : ''; ?>
                         class="w-4 h-4 rounded text-red-600 focus:ring-red-500 border-slate-300">
                     <span class="text-sm font-medium text-slate-700">Mark as Urgent</span>
                 </label>
 
                 <label class="flex items-center space-x-2 cursor-pointer">
                     <input type="checkbox" name="is_featured" id="is_featured" value="1"
-                        onclick="handleCheckboxToggle('featured')" <?php echo (isset($notice['is_featured']) && (int) $notice['is_featured'] === 1) ? 'checked' : ''; ?>
+                        onchange="handleCheckboxToggle('featured')" <?php echo (isset($notice['is_featured']) && (int) $notice['is_featured'] === 1) ? 'checked' : ''; ?>
                         class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300">
-                    <span class="text-sm font-medium text-slate-700">Featured Post</span>
+                    <span class="text-sm font-medium text-slate-700">Featured (Scheduled)</span>
                 </label>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+                <div id="featured_publish_section" class="<?php echo (isset($notice['is_featured']) && (int) $notice['is_featured'] === 1) ? '' : 'hidden'; ?>">
                     <label class="block text-sm font-medium text-slate-700 mb-1">Publish Date & Time</label>
                     <input type="datetime-local" name="publish_date" id="publish_date"
                         value="<?php echo !empty($notice['publish_date']) ? date('Y-m-d\TH:i', strtotime($notice['publish_date'])) : ''; ?>"
                         class="w-full border border-slate-300 rounded-lg p-2.5 bg-white outline-none focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-slate-400 mt-1">Notice will be published automatically at this time.</p>
                 </div>
 
                 <div>
@@ -252,6 +253,7 @@ include('../includes/header.php');
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            const publishInput = document.getElementById('publish_date');
             const expireInput = document.getElementById('expire_date');
             const fileInput = document.getElementById('attachment');
             const labelText = document.getElementById('upload-label-text');
@@ -264,11 +266,21 @@ include('../includes/header.php');
             const minutes = String(now.getMinutes()).padStart(2, '0');
             const currentMinDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
 
+            if (publishInput) {
+                publishInput.min = currentMinDateTime;
+                publishInput.addEventListener('change', function () {
+                    if (this.value && this.value < currentMinDateTime) {
+                        alert("Publish date cannot be set in the past.");
+                        this.value = "";
+                    }
+                });
+            }
+
             if (expireInput) {
                 expireInput.min = currentMinDateTime;
                 expireInput.addEventListener('change', function () {
                     if (this.value && this.value < currentMinDateTime) {
-                        alert("Error: The expiration date cannot be set in the past.");
+                        alert("Expiration date cannot be set in the past.");
                         this.value = "";
                     }
                 });
@@ -287,11 +299,16 @@ include('../includes/header.php');
         function handleCheckboxToggle(clickedType) {
             const urgentBox = document.getElementById('is_urgent');
             const featuredBox = document.getElementById('is_featured');
+            const publishSection = document.getElementById('featured_publish_section');
 
             if (clickedType === 'urgent' && urgentBox.checked) {
                 featuredBox.checked = false;
+                if (publishSection) publishSection.classList.add('hidden');
             } else if (clickedType === 'featured' && featuredBox.checked) {
                 urgentBox.checked = false;
+                if (publishSection) publishSection.classList.remove('hidden');
+            } else if (clickedType === 'featured' && !featuredBox.checked) {
+                if (publishSection) publishSection.classList.add('hidden');
             }
         }
     </script>

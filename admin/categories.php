@@ -174,6 +174,28 @@ $category_styles = [
 </div>
 </div>
 
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-40 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-md w-full shadow-xl overflow-hidden">
+        <div class="p-6 text-center">
+            <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+                <i class="fa-solid fa-trash text-xl text-red-600"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 mb-2">Delete Category</h3>
+            <p class="text-sm text-slate-500">Are you sure you want to delete <span id="deleteCatName" class="font-semibold text-slate-700"></span>?</p>
+        </div>
+        <div class="px-6 pb-6 flex gap-3">
+            <button onclick="closeDeleteModal()"
+                class="flex-1 px-4 py-2.5 rounded-lg border border-slate-300 text-slate-600 text-sm font-medium hover:bg-slate-50 transition cursor-pointer">
+                Cancel
+            </button>
+            <a id="deleteModalLink" href="#" class="flex-1 px-4 py-2.5 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition text-center">
+                Delete
+            </a>
+        </div>
+    </div>
+</div>
+
 <script>
     // Color picker sync
     const colorPicker = document.getElementById('category_color');
@@ -191,14 +213,27 @@ $category_styles = [
         document.getElementById('category_color_text').value = color.toUpperCase();
     }
 
-    // Delete confirmation
+    // Delete confirmation modal
     function confirmDelete(id, name, noticeCount) {
         if (noticeCount > 0) {
             alert('Cannot delete "' + name + '": it still has ' + noticeCount + ' notice(s) assigned to it. Reassign or remove those notices first.');
             return;
         }
-        if (confirm('Are you sure you want to delete the category "' + name + '"?')) {
-            window.location.href = 'process_category.php?action=delete&id=' + id;
-        }
+        document.getElementById('deleteCatName').textContent = name;
+        document.getElementById('deleteModalLink').href = 'process_category.php?action=delete&id=' + id;
+        const modal = document.getElementById('deleteModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
     }
+
+    function closeDeleteModal() {
+        const modal = document.getElementById('deleteModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    // Close modal on backdrop click
+    document.getElementById('deleteModal').addEventListener('click', function(e) {
+        if (e.target === this) closeDeleteModal();
+    });
 </script>
